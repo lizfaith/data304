@@ -1,0 +1,11 @@
+---
+title: "DATA 304 PORTFOLIO"
+author: "Faith Liz Nsengiyumva"
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+editor: source
+---
+
+I'm all set.
