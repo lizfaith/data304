@@ -1,0 +1,147 @@
+---
+title: "Homework 5"
+format: 
+  html:
+    output-file: "index"
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+## Exercise 2
+
+![NFL single season points record](nfl.png) b. The mark being used are
+rectangles. x-position -\> player and season y-position -\> total
+seasonal points color -\> no variable text -\> record breaking notes
+label
+
+c.  Jason Myers set a new NFL single- season record surpassing LaDainian
+    Tomlinson's long standing record including playoffs.
+
+d.  It is very visually appealing with the two shades of green
+    contrasting. There are labels and texts that clearly explain what
+    each bar means. They are sorted in descending order, making
+    comparison effortless.
+
+e.  I can make bar charts, sort bars by value, customize titles and
+    subtitles, axis labels and subtitles,color choices, text
+    annotations.
+
+f.  The labels on the x-axis that shows their names and the seasons they
+    played. The labeling would be difficult if it was not set like that
+    in the data set. I also don't know how to make the color gradient
+    yet so I would find that challenging.
+
+## Exercise 3
+
+```{r}
+library(tidyverse)
+library(vegawidget)
+```
+
+#### 1
+
+a.  Create a graphic that shows the high temperature in Seattle each
+    day.
+##### Load the data
+```{r}
+weather <- read_csv("weather-with-dates.csv")
+head(weather)
+```
+
+```{r}
+my_spec <-
+  list(
+    `$schema` = vega_schema(),
+    data = list(values = weather),
+    height = 250, width = 500,
+    transform = list(list(filter = "datum.location == 'Seattle'")),
+    mark = "line",
+    encoding = list(
+      x = list(field = "date", type = "temporal", title = "Date"),
+      y = list(field = "temp_max", type = "quantitative", title = "High Temperature")
+      )
+)
+my_spec|> as_vegaspec()
+```
+
+b.  Now modify this so that the temperatures for the same day of the
+    year are overlaid on top of each other for the several years in the
+    data set.
+
+```{r}
+'{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {
+    "url": "https://calvin-data304.netlify.app/data/weather-with-dates.csv"
+  },
+  "transform": [
+    {"filter":"datum.location == \'Seattle\'"},
+    { "calculate": "year(datum.date)", "as": "year" },
+    { "calculate": "dayofyear(datum.date)", "as": "DOY" }
+  ],
+  "height": 250,
+  "width": 500,
+  "mark": "circle",
+  "encoding": {
+    "x": {
+      "field": "DOY",
+      "type": "quantitative",
+      "title": "Day of Year"
+    },
+    "y": {
+      "field": "temp_max",
+      "type": "quantitative",
+      "title": "High Temperature"
+    },
+    "color": {
+      "field": "year",
+      "type": "nominal",
+      "title": "Year"
+    }
+  }
+}' |> as_vegaspec()
+
+```
+
+#### 2
+
+Create a graphic that shows how the different types of weather (rain,
+fog, etc.) are distributed by month in Seattle. When is it rainiest in
+Seattle? Sunniest?
+
+```{r}
+'{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {
+    "url": "https://calvin-data304.netlify.app/data/weather-with-dates.csv"
+  },
+  "transform": [
+    { "filter": "datum.location == \'Seattle\'" },
+    { "calculate": "month(datum.date) + 1", "as": "month" }
+  ],
+  "height": 250,
+  "width": 500,
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "month",
+      "type": "ordinal",
+      "title": "Month",
+      "sort": [1,2,3,4,5,6,7,8,9,10,11,12]
+    },
+    "y": {
+      "aggregate": "count",
+      "title": "Number of Days"
+    },
+    "color": {
+      "field": "weather",
+      "type": "nominal",
+      "title": "Weather Type",
+      "scale":{"scheme":"set2"}
+    }
+  }
+}' |> as_vegaspec()
+
+```
