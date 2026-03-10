@@ -1,0 +1,214 @@
+---
+title: "Homework 7"
+format: 
+  html:
+    output-file: "index"
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+## Exercise 1
+a. When labels are too long, swap the x-axis and y-axis for cleaner looking graphs. - Rearrange the bars of the graph to give them an order.- For grouped bar charts, encode one categorical variable by position along the x axis and the other by bar color.
+
+b. Wilke advises against bar charts when values are clustered far above zero, since bars must always start at zero and end up so long and similar in length that differences are hard to see. A dot plot works better in this case. He also cautions against them for very large datasets, where too many groups and categories make the chart cluttered and confusing, making a heatmap the better choice.
+
+c. Dot plot and Heat map
+
+d. Stacking is useful when the sum of the amounts represented by the individual stacked bars is in itself a meaningful amount.  Stacking is also appropriate when the individual bars represent counts
+
+e.
+```{r}
+library(altair)
+library(reticulate)
+library(vegawidget)
+library(tidyverse)
+```
+
+```{r}
+movies <- read.csv("cow-movies.csv") |>
+  mutate(amount_millions = amount / 1000000)
+
+chart <- alt$Chart(movies)$
+  mark_bar(color = "steelblue")$
+  encode(
+    x = alt$X("amount_millions:Q", title = "Weekend Gross (million USD"),
+    y = alt$Y("title:N", sort = "-x")
+  )
+
+chart
+```
+
+f.
+```{r}
+# Load and prepare the data
+income <- read_csv("cow-income.csv") |>
+  mutate(median_in_thousands = median_income / 1000)
+
+# Create the chart
+chart <- alt$Chart(income)$
+  mark_bar()$
+  encode(
+    x = alt$X("race:N", title = "Race"),
+    y = alt$Y("median_in_thousands:Q", title = "Median Income (thousands USD)"),
+    color = alt$Color("age:N", title = "Age (yrs)", scale = alt$Scale(scheme = "blues")),
+    xOffset = "age:N"
+  )$
+  properties(width = 500, height = 350)
+
+chart
+
+```
+
+
+```{r}
+income_data <- read_csv("cow-income.csv") 
+
+chart <- alt$Chart(income_data)$
+  mark_bar()$
+  encode(
+    x = alt$X("age:N", title = "Age group"),
+    y = alt$Y("median_income:Q", title = "Median income (USD)"),
+    color = alt$Color("age:N", scale = alt$Scale(scheme = "blues")),
+    column = alt$Column("race:N", title = "Race")
+  )$
+  properties(width = 150, height = 300)
+
+chart
+
+```
+
+g. 
+```{r}
+gapminder_data <- read_csv("cow-gapminder.csv") 
+
+chart <- alt$Chart(gapminder_data)$
+  transform_filter("datum.continent == 'Americas'")$
+  transform_filter("datum.year == 2007")$
+  mark_circle(size = 80)$
+  encode(
+    x = alt$X(
+      "lifeExp:Q",
+      title = "Life Expectancy (years)",
+      scale = alt$Scale(domain = c(60, 80)) 
+    ),
+    y = alt$Y(
+      "country:N",
+      sort = "x",   # sorts by life expectancy
+      title = NULL
+    )
+  )$
+  properties(
+    width = 600,
+    height = 800
+  )
+
+chart  
+```
+
+They are not ordered.
+
+## Exercise 2
+a.
+When making graphics, we should design according to what other people can see anot how we think they will see things
+
+We should use visual encodings that people can easily compare accurately when making graphics.
+
+We should always use simple charts when possible to avoid unnecessary complexity when commmunicating with data.
+
+
+
+c. I only saw the The French Army in the Russian campaign map.
+
+
+## Exercise 3
+a. Color encoding values in a grid of rectangles.
+
+b.
+```{r}
+internet <- read_csv("cow-internet2.csv") |>
+  drop_na(users)|>
+  filter(year >= 1995, year <= 2015)
+
+country_order <- c(
+  "Iceland", "Norway", "United States", "Canada", "New Zealand",
+  "United Kingdom", "Japan", "Germany", "Israel", "Italy",
+  "France", "Chile", "Brazil", "Argentina", "Mexico", "China",
+  "South Africa", "Algeria", "India", "Kenya"
+)
+
+chart <- alt$Chart(internet)$
+  mark_rect()$
+  encode(
+    x = alt$X("year:O", title = "Year"),
+    y = alt$Y("country:N",
+              sort = country_order,
+              title = NULL),
+    color = alt$Color("users:Q",
+                      title = "Users per 100 people",
+                      scale = alt$Scale(scheme = "magma")),
+    tooltip = list(
+      alt$Tooltip("country:N"),
+      alt$Tooltip("year:O"),
+      alt$Tooltip("users:Q", title = "Users per 100")
+    )
+  )$
+  properties(
+    width = 700,
+    height = 600
+  )
+
+chart
+
+
+
+```
+
+
+c. Healy explains that colors can be hard for people to compare accurately
+
+d. The later "show pony" heat map works well because shows large scale patterns over time and age not precise numeric comparisons. No. it is also covering a large time scale.
+
+## Exercise 4
+a.
+Humans are bad at comparing angles and areas therefore piecharts are often less effective for communication
+
+b. While Wilke acknowledges that pie charts can be difficult to interpret, he does not completely reject them.He says it works in some situations especially when showing simple proportions or fractions of a whole.
+
+c. Stacked bar charts.Works well when showing proportins as a whole and comparing multiple groups.
+
+Side-by-side bar charts. They work well when the goal is to compare the sizes of the individual groups and many categories.
+
+
+d.
+```{r}
+# data for the pie chart
+seats <- tibble(
+  party = c("FDP", "SPD", "CDU/CSU"),
+  seats = c(39, 214, 243)
+)
+
+chart <- alt$Chart(seats)$
+  encode(
+    theta = alt$Theta("seats:Q", stack = TRUE),
+    color = alt$Color(
+      "party:N",
+      scale = alt$Scale(
+        domain = c("FDP", "SPD", "CDU/CSU"),
+        range = c("#ffdd00", "#d62728", "#4d4d4d")
+      )
+    ),
+    order = alt$Order("seats:Q", sort = "ascending")
+  )
+pie <- chart$mark_arc()
+
+labels <- chart$
+  mark_text(radius = 120, size = 16, color = "white")$
+  encode(
+    text = "seats:Q"
+  )
+
+pie + labels
+```
+
