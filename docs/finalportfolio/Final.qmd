@@ -1,0 +1,328 @@
+---
+title: "Faith Liz's Final Portfolio"
+format: 
+  html:
+    output-file: "index"
+embed-resources: true
+code-tools: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{python}
+
+import altair as alt
+import pandas as pd
+```
+
+### Exercise 1
+
+a.  I liked graph 6 from the homework 4 gallery. I liked the use of the
+    stacked bar chart showing ancestry composition across different
+    kits.This because it clearly displays proportions of each ancestry
+    group within a single bar, making it easy to compare overall
+    composition across individuals. The use of color helps distinguish
+    between regions without overwhelming the viewer, and the layout
+    makes it easy to quickly identify patterns and differences. ![Liked
+    Graphic](good.png)
+    
+b.  I disliked graphic 7b in the gallery.I did not like was the scatter
+    plot with many small points representing different twin groups and
+    kits. The chart felt cluttered and difficult to interpret because
+    there were too many overlapping details and not enough structure. It
+    was hard to quickly understand patterns or make comparisons.
+    Generally, the graph had too much going for it. ![Disliked
+    Graphic](bad.png)
+
+c.i.
+```{python}
+#| code-fold: true 
+df = pd.read_csv('twins-genetics-long.csv')
+
+chart1 = alt.Chart(df).mark_bar().encode(
+    x=alt.X('kit:N'),
+    y=alt.Y('genetic share:Q', title='Genetic Share (%)'),
+    color=alt.Color('kit:N', legend=None),
+    column=alt.Column('region:N',
+                      title='Ancestry Region',
+                      header=alt.Header(labelAngle=-45))
+).properties(
+    title='How Genetic Ancestry Estimates Differ Across Testing Kits'
+).resolve_scale(
+    y='independent'
+)
+
+chart1
+```
+
+This visualization compares how different genetic testing kits estimate ancestry composition across regions.By faceting the chart by region, it becomes easier to focus on one ancestry category at a time and compare how each company reports genetic share. The visualization reveals that while general trends are consistent, the exact percentages vary across kits, highlighting differences in estimation methods.
+
+ii. 
+
+```{python}
+#| code-fold: true 
+
+# Dropdown selection for pair
+pair_select = alt.selection_point(fields=['pair'], bind=alt.binding_select(options=sorted(df['pair'].unique()), name="Select Pair:"))
+
+base = alt.Chart(df).add_params(pair_select).transform_filter(pair_select)
+
+bars = base.mark_bar().encode(
+    x=alt.X('region:N', sort='-y', title='Region'),
+    y=alt.Y('genetic share:Q', title='Genetic Share'),
+    color=alt.Color('twin:N', title='Twin'),
+    tooltip=['twin', 'region', 'genetic share', 'kit']
+)
+
+
+
+chart2 = bars.properties(
+  width = 450,
+  height = 300,
+    title='Detailed Comparison of Genetic Similarity Between Twins (Interactive)'
+)
+
+
+chart2
+```
+
+This visualization focuses on comparing genetic similarity between twins across different regions. The interactive dropdown allows the user to isolate specific twin pairs, making the visualization more focused and easier to interpret.What stands out is that the twins’ proportions are extremely close in every region, with only small differences in the height of the bars. This reinforces the biological expectation that identical twins share nearly all of their DNA, but it also shows how different testing kits can report slightly different values.
+
+
+### Exercise 2
+Issues:misleading y‑axis, overly thin bars, cluttered annotations, and a title that mixed interpretation with description.
+
+Improvement: redesigned the visualization using a stacked bar chart with a clean monthly time axis and simplified labeling. I removed distracting annotations and replaced them with tooltips, which provide detail on demand without cluttering the view.
+
+```{python}
+#| code-fold: true 
+
+points = pd.read_csv("touchpoints.csv")
+
+# Melt into long format
+points_long = points.melt(
+    id_vars='Date',
+    value_vars=['Phone Touchpoints', 'Chat Touchpoints', 'Email Touchpoints'],
+    var_name='Channel',
+    value_name='Touchpoints'
+)
+
+colors = alt.Scale(
+    domain=['Phone Touchpoints', 'Chat Touchpoints', 'Email Touchpoints'],
+    range=['#1f77b4', '#ff7f0e', '#17becf']   # blue, orange, teal
+)
+
+
+chart = alt.Chart(points_long).mark_bar(size=12).encode(
+    x=alt.X('yearmonth(Date):T', title='Month'),
+    y=alt.Y('Touchpoints:Q', title='Touchpoints'),
+    color=alt.Color('Channel:N', scale=colors, title='Channel'),
+    tooltip=['Date:T', 'Channel:N', 'Touchpoints:Q']
+).properties(
+    width=650,
+    height=350,
+    title='Total Touchpoints Over Time'
+).configure_axis(
+    grid=False,
+    labelFontSize=12,
+    titleFontSize=14
+).configure_title(
+    fontSize=18,
+    anchor='start',
+    fontWeight='bold'
+).configure_legend(
+    labelFontSize=12,
+    titleFontSize=13
+)
+
+chart
+
+
+```
+
+### Exercise 3
+```{python}
+#| code-fold: true 
+
+
+df = pd.read_csv("Tanzania.csv")
+
+# Clean column names
+df.columns = df.columns.str.strip()
+
+# Clean Survey_year
+df["Survey_year"] = df["Survey_year"].astype(str).str.strip()
+
+# Compute midpoint
+def midpoint(year_str):
+    if "-" in year_str:
+        a, b = year_str.split("-")
+        return (int(a) + int(b)) / 2
+    else:
+        return int(year_str)
+
+df["year"] = df["Survey_year"].apply(midpoint)
+
+# Line for Total Fertility Rate
+tfr_line = (
+    alt.Chart(df)
+    .mark_line(point=True, color="#1f77b4")
+    .encode(
+        x="year:Q",
+        y="Total_fertility_rate:Q",
+        tooltip=["Survey_year", "Total_fertility_rate"]
+    )
+)
+
+# Line for Unmet Need
+unmet_line = (
+    alt.Chart(df)
+    .mark_line(point=True, color="#d62728")
+    .encode(
+        x="year:Q",
+        y="Unmet_need:Q",
+        tooltip=["Survey_year", "Unmet_need"]
+    )
+)
+
+chart = (tfr_line + unmet_line).properties(
+    width=500,
+    height=300,
+    title="Tanzania: Total Fertility Rate and Unmet Need for Family Planning"
+)
+
+chart
+
+
+```
+
+Tanzania has experienced a steady decline in fertility over the past 25 years, while unmet need for family planning has remained persistently high.
+
+This combination shows that although women are having fewer children, access to or use of contraception has not kept pace with women’s reproductive intentions.
+
+
+
+### Exercise 4
+I created a slopegraph comparing the gender wage gap between 2005 and 2024 across OECD countries, highlighting the Nordic countries (Denmark, Finland, Iceland, Norway, and Sweden). These countries are widely recognized for gender equality, and highlighting them allows the viewer to immediately see how their wage gaps compare to global patterns.
+The dataset is from https://www.oecd.org/en/data/indicators/gender-wage-gap.html.
+
+
+```{python}
+#| code-fold: true 
+# Load your dataset
+df = pd.read_csv("wagegap.csv")
+df.columns = df.columns.str.strip()
+
+# Keep only needed columns
+df = df[["Reference area", "TIME_PERIOD", "OBS_VALUE"]]
+
+# Convert year to numeric
+df["TIME_PERIOD"] = pd.to_numeric(df["TIME_PERIOD"], errors="coerce")
+
+# Filter for the two comparison years
+years_to_use = [2005, 2024]
+df_filtered = df[df["TIME_PERIOD"].isin(years_to_use)].dropna(subset=["OBS_VALUE"])
+
+
+df_filtered = (
+    df_filtered
+    .groupby(["Reference area", "TIME_PERIOD"], as_index=False)["OBS_VALUE"]
+    .mean()
+)
+
+# Nordic countries
+nordics = ["Denmark", "Finland", "Iceland", "Norway", "Sweden"]
+df_filtered["highlight"] = df_filtered["Reference area"].isin(nordics)
+
+# Compute change for sorting
+pivot = df_filtered.pivot(index="Reference area", columns="TIME_PERIOD", values="OBS_VALUE")
+pivot["change"] = pivot[2024] - pivot[2005]
+sorted_countries = pivot.sort_values("change")["change"].index.tolist()
+
+# Base chart
+base = alt.Chart(df_filtered).encode(
+    x=alt.X("TIME_PERIOD:O", title="Year"),
+    y=alt.Y("Reference area:N", sort=sorted_countries, title=""),
+    detail="Reference area:N"
+)
+
+# Lines
+lines = base.mark_line().encode(
+    color=alt.condition(
+        alt.datum.highlight,
+        alt.value("#d62728"),
+        alt.value("#cccccc")
+    ),
+    size=alt.condition(
+        alt.datum.highlight,
+        alt.value(3),
+        alt.value(1)
+    )
+)
+
+# Points
+points = base.mark_circle(size=80).encode(
+    color=alt.condition(
+        alt.datum.highlight,
+        alt.value("#d62728"),
+        alt.value("#999999")
+    )
+)
+
+# Labels for 2024
+labels_2024 = base.mark_text(align="left", dx=6).encode(
+    text=alt.Text("OBS_VALUE:Q", format=".1f"),
+    color=alt.condition(
+        alt.datum.highlight,
+        alt.value("#d62728"),
+        alt.value("#555555")
+    )
+).transform_filter(
+    alt.datum.TIME_PERIOD == 2024
+)
+
+# Labels for 2005
+labels_2005 = base.mark_text(align="right", dx=-6).encode(
+    text=alt.Text("OBS_VALUE:Q", format=".1f"),
+    color=alt.condition(
+        alt.datum.highlight,
+        alt.value("#d62728"),
+        alt.value("#555555")
+    )
+).transform_filter(
+    alt.datum.TIME_PERIOD == 2005
+)
+
+# Combine
+chart = (lines + points + labels_2005 + labels_2024).properties(
+    width=600,
+    height=900,
+    title="Gender Wage Gap (2005 vs 2024) — Highlighting Nordic Countries"
+)
+
+chart
+
+
+```
+For this graphic, I chose a slopegraph to compare the gender wage gap across OECD countries between 2005 and 2024. A slopegraph is especially effective for showing change between two points in time because it uses minimal ink while maximizing clarity. I highlighted the Nordic countries (Denmark, Finland, Iceland, Norway, and Sweden) because they are internationally recognized for strong gender‑equality policies, and emphasizing them allows the viewer to quickly see how their wage‑gap trajectories compare to the broader OECD pattern.I made the Nordic countries in a bold red while keeping all other countries in muted gray. This contrast directs attention without overwhelming the viewer.I sorted countries by the magnitude of change rather than alphabetically. This ordering creates a more meaningful narrative i.e countries with the largest reductions appear at one end of the chart, while those with smaller improvements or increases appear at the other. 
+
+A time‑series chart would have shown more years, but it quickly became cluttered and made it difficult to focus on the specific before‑and‑after comparison required for this assignment.
+
+ A grouped bar chart was an option, but it introduced too much and made it harder to compare changes directly.
+ 
+### Exercise 5
+In the kits comparison graphic (Exercise 1), I used faceting to create separate small multiples for each twin pair. Faceting makes it easy to compare patterns across pairs while keeping the axes consistent.
+
+Both graphics include tooltips that reveal additional information (twin, region, genetic share, kit) on hover. This keeps the visual clean while still providing detail on demand.
+
+My twins graphic uses an interactive dropdown menu.
+
+### Exercise 6
+I used a slope graph, it is a combination of differenet marks i.e line, points.
+Using alt.condition() for styling
+
+b.
+Wilke stresses the importance of using color intentionally and sparingly in Chapter 4.
+
+Tufte emphasizes that good graphics allow the viewer to see many ideas in the shortest time with the least ink in chapter 1 - graphic excellence

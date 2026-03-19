@@ -1,0 +1,222 @@
+---
+title: "Homework 8"
+format: 
+  html:
+    output-file: "index"
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+library(altair)
+library(reticulate)
+library(tidyverse)
+```
+
+## Exercise 1 (Supply and demand)
+```{r}
+data <- read_csv("swd-lets-practice.csv") 
+
+chart1 <- alt$Chart(data)$
+  transform_fold(
+    as.list(c("capacity", "demand")),
+    as.list(c("variable", "value"))
+  )$
+  mark_bar()$
+  encode(
+    x = alt$X("date:T", title = "Date"),
+    xOffset = "variable:N",
+    y = alt$Y("value:Q", title = "Count"),
+    color = alt$Color(
+      "variable:N",
+      scale = alt$Scale(
+        domain = c("demand", "capacity"),
+        range = c("lightblue", "orange")  
+      )
+    )
+  )$
+  properties(width = 500, height = 300)
+
+chart1
+
+
+```
+
+```{r}
+chart2 <- alt$Chart(data)$
+  transform_fold(
+    as.list(c("capacity", "demand")),
+    as.list(c("variable", "value"))
+  )$
+  mark_line()$
+  encode(
+    x = alt$X("date:T", title = "Date"),
+    xOffset = "variable:N",
+    y = alt$Y("value:Q", title = "Count"),
+    color = alt$Color(
+      "variable:N",
+      scale = alt$Scale(
+        domain = c("demand", "capacity"),
+        range = c("lightblue", "orange")  
+      )
+    )
+  )$
+  properties(width = 500, height = 300)
+
+chart2
+
+```
+
+```{r}
+data <- read_csv(
+  "swd-lets-practice.csv") |>
+  mutate(
+    date = as.Date(paste0(date, "-01")), 
+    capacity = as.numeric(str_replace_all(capacity, ",", "")),
+    demand   = as.numeric(str_replace_all(demand, ",", ""))
+  )
+
+
+chart3 <- alt$Chart(data)$
+  transform_fold(
+    as.list(c("capacity", "demand")),
+    as.list(c("variable", "value"))
+  )$
+  mark_bar()$
+  encode(
+    x = alt$X("date:T", title = "Date"),
+    xOffset = "variable:N",                 
+    y = alt$Y("value:Q", title = "Count"),
+    color = alt$Color(
+      "variable:N",
+      scale = alt$Scale(
+        domain = c("demand", "capacity"),
+        range = c("lightblue", "orange")
+      )
+    )
+  )$
+  properties(width = 500, height = 300)
+
+chart3
+
+```
+
+```{r}
+chart3 <- alt$Chart(data)$
+  mark_bar()$
+  encode(
+    x = alt$X("year:O"),
+    y = alt$Y("value:Q"),
+    color = "variable:N",
+    column = "variable:N"
+  )$
+  transform_fold(
+    as.list(c("demand", "capacity")),
+    as.list(c("variable", "value"))
+  )$
+  properties(width = 100, height = 250)
+
+chart3
+```
+
+```{r}
+chart6 <- alt$Chart(data)$
+  mark_line(point = TRUE, color = "#d62728")$
+  encode(
+    x = "year:O",
+    y = "unmet:Q"
+  )$
+  properties(width = 400, height = 250)
+
+chart6
+
+
+```
+
+```{r}
+Data2 <- data |> mutate(unmet_demand = pmax(demand - capacity, 0))
+
+chart4 <- alt$Chart(Data2)$
+  mark_bar()$
+  encode(
+    x = "year:O",
+    y = "value:Q",
+    color = alt$Color("variable:N",
+                      scale = alt$Scale(
+                        domain = c("capacity", "unmet"),
+                        range = c("#4d4d4d", "#d62728")
+                      ))
+  )$
+  transform_fold(
+    as.list(c("capacity", "unmet")),
+    as.list(c("variable", "value"))
+  )$
+  properties(width = 400, height = 250)
+
+chart4
+
+```
+
+
+
+## Exercise 2(Jobs)
+```{r}
+library(vegabrite)
+jobs_url <- 
+  "https://cdn.jsdelivr.net/npm/vega-datasets@2.8.0/data/jobs.json"
+
+
+#| fig-cap: "This is a caption for the figure."
+vl_chart() |>
+  vl_mark_point() |>
+  vl_pivot("year", groupby = list("job", "sex"), value = "perc") |>
+  vl_encode_x("1850:Q") |>
+  vl_scale_x(type = "symlog", constant = 0.00001) |>  # note: scale must be set quite small
+  vl_encode_y("2000:Q") |>
+  vl_scale_y(type = "symlog", constant = 0.00001) |>  # note: scale must be set quite small
+  vl_facet_column("sex:N", title = "") |>
+  vl_encode_tooltip_array(list("job", "sex", "1850", "2000")) |>
+  vl_add_properties(
+    title =  list( 
+      text = "Percent of people working various jobs",
+      subtitle = "Each dot represents the one occupation. Hover to see which occupation it is."
+      )) |>
+  vl_add_data_url(jobs_url) 
+```
+```{python}
+import altair as alt
+import pandas as pd
+
+jobs_url = "https://cdn.jsdelivr.net/npm/vega-datasets@2.8.0/data/jobs.json"
+df = pd.read_json(jobs_url)
+
+Perc = (
+    df.groupby(["year", "sex"], as_index=False)["perc"]
+      .sum()
+)
+
+chart = (
+    alt.Chart(Perc)
+    .mark_line(point=True)
+    .encode(
+        x=alt.X("year:O", title="Year"),
+        y=alt.Y("perc:Q", title="Sum of perc"),
+        color="sex:N"
+    )
+    .properties(
+        title="Sum of perc by Year and Sex"
+    )
+)
+
+chart
+
+```
+
+
+
+
+## Exercise 3
+
+
