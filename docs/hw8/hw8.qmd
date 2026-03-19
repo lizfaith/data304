@@ -16,6 +16,8 @@ library(tidyverse)
 ```
 
 ## Exercise 1 (Supply and demand)
+
+### Stacked bar graph of capapcity and demand
 ```{r}
 data <- read_csv("swd-lets-practice.csv") 
 
@@ -43,7 +45,7 @@ chart1
 
 
 ```
-
+### Line graph of demand and capacity
 ```{r}
 chart2 <- alt$Chart(data)$
   transform_fold(
@@ -69,25 +71,53 @@ chart2
 
 ```
 
+### Stacked bar graph of barchart and unmet demand
 ```{r}
-data <- read_csv(
-  "swd-lets-practice.csv") |>
+data <- read_csv("swd-lets-practice.csv") |>
   mutate(
-    date = as.Date(paste0(date, "-01")), 
+    date = paste0(date, "-01"),
     capacity = as.numeric(str_replace_all(capacity, ",", "")),
     demand   = as.numeric(str_replace_all(demand, ",", ""))
   )
+data2 <- data |>
+  mutate(
+    unmet = pmax(demand - capacity, 0)
+  )
 
-
-chart3 <- alt$Chart(data)$
+chart3 <- alt$Chart(data2)$
   transform_fold(
-    as.list(c("capacity", "demand")),
+    as.list(c("capacity", "unmet")),
     as.list(c("variable", "value"))
   )$
   mark_bar()$
   encode(
     x = alt$X("date:T", title = "Date"),
     xOffset = "variable:N",                 
+    y = alt$Y("value:Q", title = "Count"),
+    color = alt$Color(
+      "variable:N",
+      scale = alt$Scale(
+        domain = c("unmet", "capacity"),
+        range = c("darkblue", "orange")
+      )
+    )
+  )$
+  properties(width = 500, height = 300)
+
+chart3
+
+```
+
+### Dot map of demand and capacity
+```{r}
+chart4 <- alt$Chart(data)$
+  transform_fold(
+    as.list(c("capacity", "demand")),
+    as.list(c("variable", "value"))
+  )$
+  mark_circle(size = 60)$
+  encode(
+    x = alt$X("date:T", title = "Date"),
     y = alt$Y("value:Q", title = "Count"),
     color = alt$Color(
       "variable:N",
@@ -99,64 +129,49 @@ chart3 <- alt$Chart(data)$
   )$
   properties(width = 500, height = 300)
 
-chart3
-
-```
-
-```{r}
-chart3 <- alt$Chart(data)$
-  mark_bar()$
-  encode(
-    x = alt$X("year:O"),
-    y = alt$Y("value:Q"),
-    color = "variable:N",
-    column = "variable:N"
-  )$
-  transform_fold(
-    as.list(c("demand", "capacity")),
-    as.list(c("variable", "value"))
-  )$
-  properties(width = 100, height = 250)
-
-chart3
-```
-
-```{r}
-chart6 <- alt$Chart(data)$
-  mark_line(point = TRUE, color = "#d62728")$
-  encode(
-    x = "year:O",
-    y = "unmet:Q"
-  )$
-  properties(width = 400, height = 250)
-
-chart6
-
-
-```
-
-```{r}
-Data2 <- data |> mutate(unmet_demand = pmax(demand - capacity, 0))
-
-chart4 <- alt$Chart(Data2)$
-  mark_bar()$
-  encode(
-    x = "year:O",
-    y = "value:Q",
-    color = alt$Color("variable:N",
-                      scale = alt$Scale(
-                        domain = c("capacity", "unmet"),
-                        range = c("#4d4d4d", "#d62728")
-                      ))
-  )$
-  transform_fold(
-    as.list(c("capacity", "unmet")),
-    as.list(c("variable", "value"))
-  )$
-  properties(width = 400, height = 250)
-
 chart4
 
+```
+
+### Line chart of unmet demand
+```{r}
+chart5 <- alt$Chart(data2)$
+  mark_line()$
+  encode(
+    x = alt$X("date:T", title = "Date"),
+    y = alt$Y("unmet:Q", title = "Unmet Demand"),
+    color = alt$Color(
+      value = "#d62728"
+    )
+  )$
+  properties(width = 500, height = 300)
+
+chart5
+
+```
+### Side by side bare graph of demand and capacity
+```{r}
+chart6 <- alt$Chart(data)$
+  transform_fold(
+    as.list(c("capacity", "demand")),
+    as.list(c("variable", "value"))
+  )$
+  mark_bar()$
+  encode(
+    x = alt$X("date:O", title = "Date"),
+    xOffset = "variable:N",
+    y = alt$Y("value:Q", title = "Count"),
+    color = alt$Color(
+      "variable:N",
+      scale = alt$Scale(
+        domain = c("demand", "capacity"),
+        range = c("lightblue", "orange")
+      )
+    )
+  )$
+properties(width = 500, height = 300)
+
+chart6
 ```
 
 
@@ -185,6 +200,9 @@ vl_chart() |>
       )) |>
   vl_add_data_url(jobs_url) 
 ```
+
+
+a.
 ```{python}
 import altair as alt
 import pandas as pd
@@ -216,7 +234,29 @@ chart
 
 
 
-
 ## Exercise 3
+```{python}
+df = pd.read_csv("gas_prices.csv")
+data = "https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv"
+country = pd.read_csv(data)
+country.column
+
+long = df.melt(
+    id_vars="country",
+    var_name="year",
+    value_name="price_usd_per_gallon"
+)
+
+long = long.dropna(subset=["price_usd_per_gallon"])
+long["year"] = long["year"].astype(int)
+
+iso = country.rename(columns={
+    "name": "iso_name",
+    "alpha_3": "iso3"
+})[["iso_name", "iso3", "region", "sub_region"]]
+
+
+
+```
 
 
